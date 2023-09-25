@@ -1,18 +1,44 @@
 <script lang="ts">
-	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
-	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
-  	import Navigation from '$lib/navigation/navigation.svelte';
   	import { afterNavigate, goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth';
+	import { storePreview, storeTheme } from '$lib/stores/theme';
 	import { AppwriteService } from '$lib/appwrite';
+
 	import { popup } from '@skeletonlabs/skeleton';
 	import type { PopupSettings } from '@skeletonlabs/skeleton';
-	import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 	import { storePopup } from '@skeletonlabs/skeleton';
-
+	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
 	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-  
+  	import Navigation from '$lib/navigation/navigation.svelte';
+	import { browser } from '$app/environment';
+
+	import { Avatar } from '@skeletonlabs/skeleton';
+
+	// Types
+	import type { ModalComponent } from '@skeletonlabs/skeleton';
+
+    // Components & Utilities
+    import { AppShell, AppBar, Modal, Toast, initializeStores, prefersReducedMotionStore } from '@skeletonlabs/skeleton';
+    initializeStores();
+
+	import ModalExampleList from '$lib/components/ModalExampleList.svelte';
+	import Chpass from '$lib/components/chpass.svelte';
+
+	const modalComponentRegistry: Record<string, ModalComponent> = {
+		modalList: {ref: ModalExampleList},
+		modalChpass: {ref: Chpass}
+	};
+
+
+	// Set body `data-theme` based on current theme status
+	storePreview.subscribe(setBodyThemeAttribute);
+	storeTheme.subscribe(setBodyThemeAttribute);
+	function setBodyThemeAttribute(): void {
+		if (!browser) return;
+		document.body.setAttribute('data-theme', $storePreview ? 'generator' : $storeTheme);
+	}
+
   	afterNavigate((params: any) => {
         const isNewPage: boolean = params.from && params.to && params.from.route.id !== params.to.route.id;
         const elemPage = document.querySelector('#page');
@@ -36,10 +62,46 @@
     	closeQuery: '.listbox-item'
     };
 
+	let firstName: string;
+	let myName: string = $authStore.name;
+	
+	if (myName.length > 2) {
+		firstName = myName.slice(0,2);
+	} else {
+		firstName = 'NO';
+	}
+
+	$: allyPageSmoothScroll = !$prefersReducedMotionStore ? 'scroll-smooth' : '';
+
 </script>
 
+<svelte:head>
+	<title>DraginoMNS</title>
+	<!-- Meta Tags -->
+	<meta name="title" content="DraginoMNS" />
+	<meta name="description" content="dragino gateways manager" />
+	<meta name="keywords" content="lora, lorawan, ttn, semtech, thethingsnetworking, dragon, gateway" />
+	<meta name="theme-color" content="#242c46" />
+	<meta name="author" content="Dragino Labs" />
+	<!-- Open Graph - https://ogp.me/ -->
+	<meta property="og:site_name" content="DraginoMNS" />
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://www.dragino.com" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:title" content="DraginoMNS" />
+	<meta property="og:description" content="dragino gateways manager" />
+	<meta property="og:image" content="" />
+	<meta property="og:image:secure_url" content="" />
+	<meta property="og:image:type" content="image/jpg" />
+	<meta property="og:image:width" content="1707" />
+	<meta property="og:image:height" content="1233" />
+</svelte:head>
+
+<Modal components={modalComponentRegistry} />
+<Toast />
+
 <!-- App Shell -->
- <AppShell scrollGutter="auto" slotSidebarLeft="bg-surface-500/5 w-0 lg:w-64">
+ <AppShell scrollGutter="auto" slotSidebarLeft="bg-surface-500/5 w-0 lg:w-64" regionPage={allyPageSmoothScroll}>
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
 	<AppBar>
@@ -58,24 +120,32 @@
         </div>
       </svelte:fragment>
 			<svelte:fragment slot="trail">
+				<Avatar initials={firstName} background="bg-primary-500"/>
+
+				<!--
 				<button class="btn variant-soft-secondary w-48 justify-between" use:popup={popupCombobox}>
-						<svg fill="none" height="24" 
-							stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-							viewBox="0 0 24 24" width="24" 
-							xmlns="http://www.w3.org/2000/svg">
-							<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-							<circle cx="12" cy="7" r="4"/>
-						</svg>
-					<span>{comboboxValue ?? $authStore.name}</span>
 					<span>↓</span>
 				</button>
 				<div class="card w-48 shadow-xl py-2 bg-primary-100" data-popup="popupCombobox">
-					<ListBox rounded="rounded-none">
-						<ListBoxItem bind:group={comboboxValue} name="medium" value="chpasswd">Passwd</ListBoxItem>
-						<ListBoxItem bind:group={comboboxValue} name="medium" value="logout" on:click={onLogout}>Logout</ListBoxItem>
-					</ListBox>
+					<button class="btn">Passwd</button>
+					<button class="btn" on:click={onLogout}>Logout</button>
 					<div class="arrow bg-surface-100-800-token" />
 				</div>
+				<div class="card shadow-xl py-2 bg-primary-100" data-popup="popupChpass">
+                    <form class="form-input border border-surface-500 p-4 space-y-4 rounded-container-token">
+						<span class="px-1">Old password</span>
+                    	<input class="input" type="password" placeholder="Old Password" />
+						<span class="px-1">New password</span>
+                    	<input class="input" type="password" placeholder="New password" />
+						<span class="px-1">New password again</span>
+                    	<input class="input" type="password" placeholder="Detect" />
+                    	<button class="btn variant-filled-success">Submit</button>
+						<button id="will-close" class="btn variant-filled-success">Cancel</button>
+                    </form>
+
+					<div class="arrow bg-surface-100-800-token" />
+				</div>
+				-->
 			</svelte:fragment>
 	</AppBar>
 	</svelte:fragment>

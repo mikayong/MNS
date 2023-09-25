@@ -7,17 +7,17 @@ import { get } from 'svelte/store';
 
 export const ssr = false
 
-export const load: PageLoad = async ({ params, url, parent }) => {
+export const load: PageLoad = async ({ url, parent }) => {
 	await parent();
 	
-	const { panel, group } = PageUtils.parseParams("64895f70d9a400b1b039");
+	const { panel, group } = PageUtils.parseParams("mnsMain");
 
 	try {
 		const limit = +(url.searchParams.get('limit') ?? '10');
 		const page = +(url.searchParams.get('page') ?? '1');
 		const label = url.searchParams.get('label') ?? '';
 		const query = [];
-		const userQuery = 'equal("userID",'  + get(authStore).$id + ')';
+		const userQuery = 'equal("gwUser",'  + get(authStore).$id + ')';
 		query.push(userQuery);	
 
 		const documents = await AppwriteService.listDocuments<any>(
@@ -34,7 +34,7 @@ export const load: PageLoad = async ({ params, url, parent }) => {
 			panelLimit: limit,
 			panelPage: page,
 
-			panelSlug: "64895f70d9a400b1b039",
+			panelSlug: "mnsMain",
 			group,
 			panel
 		};
