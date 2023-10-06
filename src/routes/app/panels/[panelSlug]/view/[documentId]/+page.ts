@@ -10,24 +10,26 @@ export const load: PageLoad = async ({ params }) => {
 	const id = params.documentId;
 
 	if (!id) {
-		throw error(404, { message: 'Document not found.' });
+		throw error(404, { message: 'Gateway not found.' });
 	}
 
 	try {
-		const document = await AppwriteService.getDocument<any & Models.Document>(
-			panel.databaseId,
-			panel.collectionId,
-			id
-		);
+		const document = await AppwriteService.getDocument<any & Models.Document>( panel.databaseId, panel.collectionId, id);
+
+		const config = await AppwriteService.getDocument<any & Models.Document>( panel.databaseId, 'gwConfig', id);
+
+		const shadow = await AppwriteService.getDocument<any & Models.Document>( panel.databaseId, 'gwShadow', id);
 
 		return {
 			panelDocument: document,
-
 			panelSlug: params.panelSlug,
+			gwConfig: config,
+			gwShadow: shadow,
 			group,
 			panel
 		};
+
 	} catch (err: any) {
-		throw error(500, { message: 'Could not load document: ' + err.message });
+		throw error(500, { message: err.message });
 	}
 };

@@ -22,7 +22,7 @@ export const load: PageLoad = async ({ params, url, parent }) => {
 		const page = +(url.searchParams.get('page') ?? '1');
 		const label = url.searchParams.get('label') ?? '';
 		const query = [];
-		const userQuery = 'equal("gwUser",'  + get(authStore).$id + ')';
+		const userQuery = 'equal("userID",'  + get(authStore).$id + ')';
 		query.push(userQuery);	
 
 		const labelObj = panel.labels.find((l) => l.slug === label);

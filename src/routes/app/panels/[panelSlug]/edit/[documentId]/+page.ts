@@ -12,20 +12,26 @@ export const load: PageLoad = async ({ parent, params }) => {
 	const id = params.documentId;
 
 	if (!id) {
-		throw error(404, { message: 'Document not found.' });
+		throw error(404, { message: 'Gateway not found.' });
 	}
 
 	try {
 		const document = await AppwriteService.getDocument<any & Models.Document>(
 			panel.databaseId,
-			panel.collectionId,
+			'mnsMain',
+			id
+		);
+
+		const config = await AppwriteService.getDocument<any & Models.Document>(
+			panel.databaseId,
+			'gwConfig',
 			id
 		);
 
 		return {
 			panelDocument: document,
-
 			panelSlug: params.panelSlug,
+			gwConfig: config,
 			group,
 			panel
 		};

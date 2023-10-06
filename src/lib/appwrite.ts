@@ -61,11 +61,10 @@ export const AppwriteService = {
 		databaseId: string,
 		collectionId: string,
 		documentId: string,
-		document: any
+		document: any,
+		permissions: string[] | undefined
 	) => {
-		return await databases.createDocument<T>(databaseId, collectionId, documentId, document, [
-			Permission.read(Role.any())
-		]);
+		return await databases.createDocument<T>(databaseId, collectionId, documentId, document, permissions);
 	},
 	updateDocument: async <T extends Models.Document>(
 		databaseId: string,

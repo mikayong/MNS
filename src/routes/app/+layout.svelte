@@ -13,6 +13,9 @@
   	import Navigation from '$lib/navigation/navigation.svelte';
 	import { browser } from '$app/environment';
 
+	// icons
+	import Icon from '@iconify/svelte';
+	import logoutIcon from '@iconify/icons-tabler/logout';
 	import { Avatar } from '@skeletonlabs/skeleton';
 
 	// Types
@@ -120,7 +123,16 @@
         </div>
       </svelte:fragment>
 			<svelte:fragment slot="trail">
-				<Avatar initials={firstName} background="bg-primary-500"/>
+				<button use:popup={popupCombobox}>
+					<Avatar initials={firstName} background="bg-primary-500"/>
+				</button>
+				<div class="card w-28 shadow-xl p-2 py-2 bg-primary-100" data-popup="popupCombobox">
+					<button class="btn hover:variant-soft-primary" on:click={onLogout}>
+						<Icon icon={logoutIcon} />
+						Logout
+					</button>
+					<div class="arrow bg-surface-100-800-token" />
+				</div>
 
 				<!--
 				<button class="btn variant-soft-secondary w-48 justify-between" use:popup={popupCombobox}>

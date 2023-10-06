@@ -138,7 +138,6 @@ export class Panel {
 	addIdBlock(attribute: string) {
 		this.addBlock(
 			createBlock(attribute)
-				.delListInterface()
 				.setEditInterface( new EditPlaintext()
 					.setEditDisabled(true)
 					.setCreateValue('unique()'))
@@ -259,11 +258,6 @@ export class Block {
 		return this;
 	}
 
-	delListInterface() {
-		if (this.listInterface)
-			delete this.listInterface;
-		return this;
-	}
 }
 
 export function createConfig(endpoint: string, projectId: string) {

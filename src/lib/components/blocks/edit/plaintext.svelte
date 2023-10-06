@@ -28,7 +28,6 @@
 	<input class="input p-3 border-2 variant-ghost-primary text-lg text-slate-500" 
 			name={block.attribute}	
     		value="NotAtten"
-			disabled="true"
 			/>
 {:else if block.editInterface.name === "gwModel"}
 	<select class="input p-3 border-2 variant-ghost-primary text-lg text-slate-900" 

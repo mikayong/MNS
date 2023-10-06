@@ -4,7 +4,12 @@
     import { ViewInterface } from '$lib/config.interfaces';
 	import { configStore } from '$lib/stores/config';
 	import type { PageData } from './$types';
-	import { clipboard } from '@skeletonlabs/skeleton';
+	import { clipboard, getDrawerStore } from '@skeletonlabs/skeleton';
+	import { ConicGradient } from '@skeletonlabs/skeleton';
+	import type { ConicStop } from '@skeletonlabs/skeleton';
+
+	import { TabGroup, Tab, TabAnchor } from '@skeletonlabs/skeleton';
+	let configSet: number = 0;
 
 	export let data: PageData;
 
@@ -20,12 +25,44 @@
 			}
 		}
 	}
+
+	let gwStatus: string = "none";
+	let lastSeen: number = Date.now() - Date.parse(data.panelDocument['$updatedAt']);
+
+	if (lastSeen <= 300000) {
+		gwStatus = "Connected";
+	} else if (lastSeen <= 7200000) {
+		gwStatus = "Last seen " + Math.floor(lastSeen/60000) + " Mins ago";
+	} else if (lastSeen <= 172800000) {
+		gwStatus = "Last seen " + Math.floor(lastSeen/3600000) + " Hours ago";
+	} else {
+		gwStatus = "Last seen " + Math.floor(lastSeen/86400000) + " Days ago";
+	}
+
+	let gwConfig: any = JSON.parse(data.gwConfig.gwConfig);
+	let gwShadow: any = JSON.parse(data.gwShadow.gwShadow);
+
+	const freeHardisk = Math.ceil(gwShadow.hardisk[0].free / (gwShadow.hardisk[0].total + 1));
+	const freeMemory = Math.ceil(gwShadow.memory.free / (gwShadow.memory.total + 1));
+	const cacheMemory = Math.ceil(gwShadow.memory.cache / (gwShadow.memory.total + 1));
+	
+    const hardisk: ConicStop[] = [
+    	{ label: 'free', color: 'rgba(2, 255, 1, 1)', start: 0, end: freeHardisk },
+    	{ label: 'used', color: 'rgba(255, 5, 1, 1)', start: freeHardisk, end: (100 - freeHardisk + 1) }
+    ];
+
+    const memory: ConicStop[] = [
+    	{ label: 'free', color: 'rgba(2, 255, 1, 1)', start: 0, end: freeMemory },
+    	{ label: 'cache', color: 'rgba(25, 5, 255, 1)', start: (freeMemory), end: cacheMemory + 1 },
+    	{ label: 'used', color: 'rgba(255, 5, 1, 1)', start: (freeMemory + cacheMemory + 1), end: (100 - freeMemory - cacheMemory + 3) }
+    ];
+
 </script>
 
 <Navbar
-	title="GatewayID"
-	description="Gateway infomation"
-	subtitle={data.panelDocument.gwID}
+	title="GatewaySN"
+	description={gwStatus}
+	subtitle={data.panelDocument.gwSN}
 	icon="👀"
 >
 	<div class="flex items-center justify-end space-x-4">
@@ -78,43 +115,120 @@
 	</div>
 </Navbar>
 
-<div class="w-full flex">
-{#if panel.name == "Gateways"}
-	<div class="card p-4 w-1/2 inline-block my-6 mx-6 shadow-lime-50 variant-soft-secondary">
-		{#each panel.blocks as block}
-			{@const value = data.panelDocument[block.attribute]}
-			{#if String(value).length > 0}
-				<div class="p-4">
-					{#if block.attribute == "gwID"}
-							<div class="pre inline-block w-36 variant-filled-primary text-xl">GatewayID</div>
-							<div class="pre inline-block w-96 variant-filled-secondary text-xl" data-clipboard={block.attribute}>{data.panelDocument[block.attribute]}</div>
-							<div class="pre inline-block w-20 variant-filled-tertiary text-xl">
-								<button use:clipboard={{element: block.attribute}}>Copy</button>
-							</div>
-					{:else if block.attribute == "status"}
-							<div class="pre inline-block w-36 variant-filled-primary text-xl">Status</div>
-							<div class="pre inline-block w-96 variant-filled-secondary text-xl">None</div>
-					{:else}
-							<div class="pre inline-block w-36 variant-filled-primary text-xl">{block.attribute}</div>
-							<div class="pre inline-block w-96 variant-filled-secondary text-xl">{data.panelDocument[block.attribute]}</div>
-					{/if}
-				</div>
-			{/if}
-		{/each}
-	</div>
-	<div class="card card-hover p-4 w-1/3 inline-block my-6 mx-8 shadow-lime-50 variant-soft-tertiary">
-		<div><p class="chip variant-filled-primary m-2 text-2xl"><b>Gateway Overview</b></p></div>
-		<hr class="!border-t-2" /> <br />
-		<div><p class="chip variant-filled-secondary m-2 text-xl">GreateAt :&nbsp<span class="variant-filled-success">{data.panelDocument['$createdAt']}</span></p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">LastSeen :&nbsp<span class={(Date.now() - Date.parse(data.panelDocument['$updatedAt'])) > 300000 ? "bg-red-500" : "bg-green-100"}>{data.panelDocument['$updatedAt']}</span></p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">Uptime</p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">OS</p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">FWD version</p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">Hardisk</p></div>
-		<div><p class="chip variant-filled-secondary m-2 text-xl">Memery</p></div>
-	</div>
-{:else}
-	<div class="card p-4 w-1/3">
-	</div>
-{/if}
+<div class="flex flex-row p-8">
+	{#if panel.name == "Gateways"}
+		<div class="m-6 p-2">
+			<div class="mx-10 my-4 px-2 py-4 w-2/3 text-3xl font-extrabold bg-primary-100"> General configure </div>
+			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md">
+				<div class="input-group-shim font-extrabold text-lg w-48">GatewaySN</div>
+				<input name="gwSN" type="text" value={data.panelDocument.gwSN}  readonly/>
+				<button class="variant-soft-secondary ">Copy</button>
+			</div>
+			<div class="input-group input-group-divider flex grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md my-2">
+				<div class="input-group-shim font-extrabold text-lg w-48">GatewayID</div>
+				<input name="gwSN" type="text" value={gwConfig.gwID} readonly/>
+				<button class="variant-soft-secondary ">Copy</button>
+			</div>
+			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md my-2">
+				<div class="input-group-shim font-extrabold text-lg w-48">Gateway group</div>
+				<input class="w-3/5" name="gwGroup" type="text" value={gwConfig.gwGroup} readonly/>
+			</div>				
+			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md my-2">
+				<div class="input-group-shim font-extrabold text-lg w-48">Gateway model</div>
+				<input class="w-3/5" name="gwModel" type="text" value={gwConfig.gwModel} readonly/>
+			</div>				
+			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md my-2">
+				<div class="input-group-shim font-extrabold text-lg w-48">Gateway Region</div>
+				<input class="w-3/5" name="gwRegion" type="text" value={gwConfig.gwRegion} readonly/>
+			</div>
+			<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 w-2/3 rounded-md my-2">
+				<div class="input-group-shim font-extrabold text-lg w-48">Description</div>
+				<textarea class="mx-3 textarea" name="gwDesc" rows="4" value={gwConfig.gwDesc} readonly/>
+			</div>
+
+			<div class="mx-10 my-4 px-2 py-4 w-2/3 text-3xl font-extrabold bg-primary-100"> LoRaWan Configure </div>
+			
+                <TabGroup class="w-2/3">
+					<div class="flex mx-10 rounded-md">
+                	<Tab bind:group={configSet} name="fwdConfigure" value={0}>
+                		<div class="text-xl font-bold">Forwarder</div>
+                	</Tab>
+                	<Tab bind:group={configSet} name="stationConfigure" value={1}>
+						<div class="text-xl font-bold">Basicstation</div>
+					</Tab>
+					</div>
+                	<!-- Tab Panels --->
+                	<svelte:fragment slot="panel">
+					<div>
+                		{#if configSet === 0}
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">Server name</div>
+						    	<input name="serverName" type="text" value={gwConfig.fwdConfig.servers[0].serverName} readonly/>
+						    </div>
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">Status interval</div>
+						    	<input name="statusInterval" type="number" value={gwConfig.statInterval} readonly/>
+						    </div>
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">Server addr</div>
+						    	<input name="serverAddr" type="text" value={gwConfig.fwdConfig.servers[0].serverAddr} readonly/>
+						    </div>
+						    <div class="flex mx-10">
+						        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-md my-2">
+						        	<div class="input-group-shim font-extrabold text-lg w-28">UP port</div>
+						        	<input name="uplinkPort" type="number" value={gwConfig.fwdConfig.servers[0].uplinkPort} readonly/>
+						        </div>
+						        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-md my-2 ml-16">
+						        	<div class="input-group-shim font-extrabold text-lg w-28">Down </div>
+						        	<input name="uplinkPort" type="text" value={gwConfig.fwdConfig.servers[0].dnlinkPort} readonly/>
+						        </div>
+						    </div>
+						    <div class="flex mx-10">
+						        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-md my-2">
+						        	<div class="input-group-shim font-extrabold text-lg w-36">FportFilter</div>
+						        	<input name="fportFilter" type="number" value={gwConfig.fwdConfig.servers[0].fportFilter} readonly/>
+						        </div>
+						        <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] rounded-md my-2 ml-16">
+						        	<div class="input-group-shim font-extrabold text-lg w-36">DevaddrFilter </div>
+						        	<input name="addrFilter" type="text" value={gwConfig.fwdConfig.servers[0].addrFilter} readonly/>
+						        </div>
+						    </div>
+                		{:else if configSet === 1}
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">StationURI</div>
+						    	<input name="stationURI" type="text" value={gwConfig.stationConfig.stationURI} readonly/>
+						    </div>
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">Certification</div>
+						    	<input name="stationCer" type="text" value={gwConfig.stationConfig.stationCer} readonly/>
+						    </div>
+						    <div class="input-group input-group-divider grid-cols-[auto_1fr_auto] mx-10 rounded-md my-2">
+						    	<div class="input-group-shim font-extrabold text-lg w-48">PrivateKey</div>
+						    	<input name="stationKey" type="text" value={gwConfig.stationConfig.stationKey} readonly/>
+						    </div>
+                		{/if}
+					</div>
+                	</svelte:fragment>
+                </TabGroup>
+		</div>
+	    <div class="card p-2 m-6 w-1/2 shadow-lime-50 variant-soft-tertiary">
+	    	<div><p class="chip variant-filled-primary m-2 text-2xl"><b>Gateway Overview</b></p></div>
+	    	<hr class="!border-t-2" /> <br />
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">GreateAt :&nbsp<span class="variant-filled-success">{data.panelDocument['$createdAt']}</span></p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">LastSeen :&nbsp<span class={lastSeen > 300000 ? "bg-red-500" : "bg-green-100"}>{data.panelDocument['$updatedAt']}</span></p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">Uptime: {gwShadow.uptime ?? "None"}</p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">OS: {gwShadow.osVersion ?? "None"}</p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">FWD version: {gwShadow.fwdVersion ?? "None"} </p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">GatewayIP: {gwShadow.gwIP ?? "None"} </p></div>
+	    	<div><p class="chip variant-filled-secondary m-2 text-xl">Gateway Location: {gwShadow.gwLocation ?? "None"} </p></div>
+
+	    	<div class="p-1 flex-row flex ml-8 mt-8">
+	    		<div><ConicGradient stops={hardisk} legend>{gwShadow.hardisk[0].name + gwShadow.hardisk[0].total + " M (Hardisk)"}</ConicGradient></div>
+	    		<div class="ml-12"><ConicGradient stops={memory} legend>{"Total " + gwShadow.memory.total + " M (Memory)"}</ConicGradient></div>
+	    	</div>
+	    </div>
+    {:else}
+    	<div class="card p-4 w-1/3">
+    	</div>
+    {/if}
 </div>

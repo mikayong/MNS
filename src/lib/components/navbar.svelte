@@ -15,11 +15,11 @@
 			{title}
 
 			{#if subtitle}
-				<span class="text-slate-400">- {subtitle}</span>
+				<span class="text-slate-500">- {subtitle}</span>
 			{/if}
 		</h1>
 		{#if description}
-			<p class="text-sm text-slate-500">{description}</p>
+			<p class="text-base text-slate-500 mx-10">{description}</p>
 		{/if}
 	</div>
 

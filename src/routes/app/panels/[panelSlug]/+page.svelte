@@ -95,8 +95,13 @@
 
 	async function onDelete(panel: Panel, document: Models.Document) {
 		if (confirm('Are you sure to delete?')) {
-			await AppwriteService.deleteDocument(panel.databaseId, panel.collectionId, document.$id);
+			try {
+			    await AppwriteService.deleteDocument(panel.databaseId, panel.collectionId, document.$id);
+			    await AppwriteService.deleteDocument(panel.databaseId, 'gwConfig', document.$id);
+			    await AppwriteService.deleteDocument(panel.databaseId, 'gwShadow', document.$id);
+			} catch (err: any) {
 
+			}
 			await invalidateAll();
 		}
 	}

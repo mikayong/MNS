@@ -15,6 +15,7 @@
     "@iconify/icons-fluent": "^1.2.34",
     "@iconify/icons-grommet-icons": "^1.2.5",
     "@iconify/icons-ic": "^1.2.13",
+    "@iconify/icons-tabler": "^1.2.91",
     "@iconify/icons-uiw": "^1.2.6",
     "@iconify/svelte": "^3.1.4",
     "@skeletonlabs/skeleton": "^2.1.0",

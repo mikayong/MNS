@@ -17,7 +17,7 @@
 	
 </script>
 
-{#if block.attribute === "status"}
+{#if block.attribute === "gwStatus"}
 	{#if lastSeen <= 300000}
 		<p class="max-h-[24px] overflow-hidden text-green-400">Connected</p>
 	{:else if (lastSeen > 300000) && (lastSeen <= 7200000) }
